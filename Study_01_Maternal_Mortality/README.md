@@ -1,7 +1,28 @@
 # Study 01 — Maternal Mortality & Severe Maternal Morbidity Decomposition
 
-**Status (2026-05-18):** Active — framing. No pre-reg locked yet. Cohort
-substrate identified, awaiting design parameter decisions.
+**Status (2026-05-18):** **PRE-REGISTRATION LOCKED.** Design fully specified in
+[PRE_REGISTRATION.md](PRE_REGISTRATION.md). HCUP NIS data acquisition is
+the next gating step. No compute fired.
+
+**Headline locks:**
+- **Substrate:** HCUP National Inpatient Sample 2017–2021, ~18M delivery
+  hospitalizations, ~325k composite SMM events expected
+- **Outcomes:** All 21 CDC SMM indicators modeled individually +
+  composite (22 outcomes total)
+- **Stratifiers:** race / insurance / parity / hospital bed size / hospital
+  urban-rural / maternal age / comorbidities (chronic HTN, pre-existing
+  diabetes, prior cesarean) / state Medicaid expansion
+- **BMI explicitly EXCLUDED** — false measure per editorial policy
+- **Methodology:** 3 model families in parallel — hierarchical logistic
+  (Family 1, primary) + causal-Bayes priors on hospital selection
+  (Family 2) + latent-class SMM-subtype mixture (Family 3, exploratory)
+- **Temporal contrasts:** single-year 2021 / rolling 5-year 2017–2021 /
+  pre-pandemic-vs-pandemic split — all three reported
+- **Decision rule:** posterior 95% CI excludes null AND rate ratio ≥ 1.20
+- **Reporting:** 198 result rows (22 outcomes × 3 families × 3 contracts).
+  All reported regardless of direction. No selective reporting.
+- **Editorial:** Pro-women framing, direct disparity language, no
+  "complex factors" hedging.
 
 ## Question
 

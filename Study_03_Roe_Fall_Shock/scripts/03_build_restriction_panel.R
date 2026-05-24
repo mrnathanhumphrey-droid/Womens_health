@@ -1,21 +1,22 @@
-# Study 03 — Build pre-Dobbs restriction-intensity panel.
+# Study 03 — Build treatment-intensity panel (pivoted per DEVIATIONS Entry 002).
 #
-# Combines Guttmacher state-monthly policy variables + Caitlin Myers
-# county-year clinic distance + KFF post-Dobbs effective dates into
-# the analysis-ready restriction panel.
+# REPLACES original longitudinal-LawAtlas composite (unavailable publicly).
+# Pivoted operationalization uses public revealed-preference indicators:
+#   - ban_category: 4-level ordinal (No/Gest 19+/Gest ≤18/Total)
+#   - time_to_ban_days: continuous days from Dobbs to ban implementation
+#   - myers_distance_predobbs: optional county-level access measure
 #
-# Inputs (manual downloads expected; see scripts/00_data_access_scope.md):
-#   data/raw/reference/guttmacher_state_policy_2017_2022.csv
-#   data/raw/reference/kff_post_dobbs_status.csv
-#   data/raw/reference/myers_county_distance.csv
+# Inputs:
+#   data/raw/reference/guttmacher_ban_status_snapshot_2026_04.csv
+#   data/raw/reference/state_time_to_ban_days.csv   (hand-coded, OPTIONAL —
+#                                                    if missing, derive from
+#                                                    Guttmacher categories only)
+#   data/raw/reference/myers_county_distance.csv    (OPTIONAL)
 #
 # Output:
 #   data/derived/restriction_panel.rds
-#     Columns: state, county_fips, year, month,
-#              guttmacher_composite, guttmacher_components_*,
-#              myers_distance_miles,
-#              post_dobbs_sharp, post_dobbs_state_trigger,
-#              state_trigger_date
+#     Long panel: county_fips × year × month with treatment intensity
+#     joined from state-level ban category + optional county-level Myers.
 
 user_lib <- file.path(Sys.getenv("LOCALAPPDATA"), "R/win-library/4.6")
 .libPaths(c(user_lib, .libPaths()))
@@ -30,107 +31,85 @@ ref <- file.path(repo, "data/raw/reference")
 deriv <- file.path(repo, "data/derived")
 dir.create(deriv, showWarnings = FALSE, recursive = TRUE)
 
-# Sharp Dobbs date
 DOBBS_DATE <- as.Date("2022-06-24")
 
-# --- Load Guttmacher state-monthly policy timeline -------------------
-gutt_file <- file.path(ref, "guttmacher_state_policy_2017_2022.csv")
-if (!file.exists(gutt_file)) {
-  stop("Guttmacher file missing at ", gutt_file,
-       ". Manual download required — see scripts/00_data_access_scope.md.")
-}
+# --- Ban category from Guttmacher snapshot --------------------------
+gutt_file <- file.path(ref, "guttmacher_ban_status_snapshot_2026_04.csv")
+if (!file.exists(gutt_file)) stop("Guttmacher snapshot missing: ", gutt_file)
 gutt <- fread(gutt_file)
-cat(sprintf("Guttmacher: %d rows × %d cols\n", nrow(gutt), ncol(gutt)))
+cat(sprintf("Guttmacher snapshot: %d states\n", nrow(gutt)))
 
-# Expected Guttmacher columns (may need renaming based on actual download):
-#   state, state_abbr, year, month, gestational_limit_weeks,
-#   medicaid_funding_restricted, trap_law, mandatory_counseling,
-#   waiting_period_hours, parental_notification
-# Adjust this section once file lands.
+# Ordinal encoding 0-3
+gutt[, ban_intensity := fcase(
+  ban_category == "No restriction",          0L,
+  ban_category == "Gestational limit 19+wk", 1L,
+  ban_category == "Gestational limit <=18wk", 2L,
+  ban_category == "Total ban",               3L,
+  default = NA_integer_
+)]
+stopifnot(!any(is.na(gutt$ban_intensity)))
+cat("Ban-category distribution:\n")
+print(table(gutt$ban_category))
 
-# Build composite score (per pre-reg §4):
-#   Sum of binary policy indicators measured pre-Dobbs at 2017 baseline OR
-#   any monthly observation. We use a continuous count of restrictive-policy
-#   indicators at the state-month level.
-required_cols <- c("state_abbr", "year", "month",
-                   "medicaid_funding_restricted", "trap_law",
-                   "mandatory_counseling", "parental_notification")
-missing_cols <- setdiff(required_cols, names(gutt))
-if (length(missing_cols) > 0) {
-  cat("[WARN] Guttmacher missing expected columns:",
-      paste(missing_cols, collapse = ", "), "\n",
-      "Adapt this block to actual file structure.\n")
+# --- Time-to-ban-days (optional hand-coded file) -------------------
+ttb_file <- file.path(ref, "state_time_to_ban_days.csv")
+if (file.exists(ttb_file)) {
+  ttb <- fread(ttb_file)
+  cat(sprintf("Time-to-ban file present: %d states\n", nrow(ttb)))
+} else {
+  cat("[NOTE] state_time_to_ban_days.csv not present. Deriving rough\n",
+      "      proxy from ban_category: Total ban → 0 days (trigger-law\n",
+      "      assumed); Gestational ≤18wk → 90 days; Gestational 19+wk\n",
+      "      → 365 days; No restriction → 99999.\n",
+      "      Replace with hand-coded effective-date file for higher-fidelity\n",
+      "      analysis.\n", sep = "")
+  ttb <- gutt[, .(state_abbr, time_to_ban_days = fcase(
+    ban_intensity == 3L, 0L,
+    ban_intensity == 2L, 90L,
+    ban_intensity == 1L, 365L,
+    ban_intensity == 0L, 99999L
+  ))]
 }
+gutt <- merge(gutt, ttb, by = "state_abbr", all.x = TRUE)
 
-# Composite construction (assuming binary 0/1 indicators where applicable)
-gutt[, guttmacher_composite := rowSums(.SD, na.rm = TRUE),
-     .SDcols = intersect(c("medicaid_funding_restricted", "trap_law",
-                           "mandatory_counseling", "parental_notification"),
-                         names(gutt))]
-# Add gestational-limit and waiting-period as binaries (1 if restrictive)
-if ("gestational_limit_weeks" %in% names(gutt)) {
-  gutt[, gest_limit_restrictive := as.integer(gestational_limit_weeks <= 20)]
-  gutt[, guttmacher_composite := guttmacher_composite + gest_limit_restrictive]
-}
-if ("waiting_period_hours" %in% names(gutt)) {
-  gutt[, wait_period_restrictive := as.integer(waiting_period_hours > 0)]
-  gutt[, guttmacher_composite := guttmacher_composite + wait_period_restrictive]
-}
-
-cat(sprintf("Guttmacher composite range: %d - %d (mean %.2f)\n",
-            min(gutt$guttmacher_composite, na.rm = TRUE),
-            max(gutt$guttmacher_composite, na.rm = TRUE),
-            mean(gutt$guttmacher_composite, na.rm = TRUE)))
-
-# Pre-Dobbs baseline = mean composite Jan 2017 through May 2022
-gutt_pre <- gutt[(year < 2022) | (year == 2022 & month <= 5),
-                 .(guttmacher_composite_predobbs = mean(guttmacher_composite,
-                                                        na.rm = TRUE)),
-                 by = state_abbr]
-
-# --- Load KFF post-Dobbs status --------------------------------------
-kff_file <- file.path(ref, "kff_post_dobbs_status.csv")
-if (!file.exists(kff_file)) {
-  stop("KFF file missing at ", kff_file)
-}
-kff <- fread(kff_file)
-cat(sprintf("KFF: %d rows\n", nrow(kff)))
-# Expected: state_abbr, status (Banned / Restricted / etc.), effective_date
-
-# --- Load Myers county-distance --------------------------------------
+# --- Myers county-distance (optional) ------------------------------
 myers_file <- file.path(ref, "myers_county_distance.csv")
-if (!file.exists(myers_file)) {
-  stop("Myers file missing at ", myers_file)
-}
-myers <- fread(myers_file)
-cat(sprintf("Myers: %d rows\n", nrow(myers)))
-# Expected: county_fips, year, mean_distance_miles (or similar)
-
-# Pre-Dobbs distance baseline (2021 vintage per pre-reg §4)
-myers_pre <- myers[year == 2021, .(myers_distance_predobbs = mean_distance_miles,
-                                    county_fips = county_fips)]
-if (nrow(myers_pre) == 0) {
-  # Fallback to latest available pre-Dobbs year
-  latest_pre <- max(myers$year[myers$year <= 2021])
-  cat(sprintf("[NOTE] No 2021 vintage; falling back to %d\n", latest_pre))
-  myers_pre <- myers[year == latest_pre,
+have_myers <- file.exists(myers_file)
+if (have_myers) {
+  myers <- fread(myers_file)
+  cat(sprintf("Myers distance file present: %d rows\n", nrow(myers)))
+  # Expected: county_fips, year, mean_distance_miles
+  myers_pre <- myers[year == 2021,
                      .(myers_distance_predobbs = mean_distance_miles,
                        county_fips = county_fips)]
+  if (nrow(myers_pre) == 0) {
+    latest_pre <- max(myers$year[myers$year <= 2021])
+    cat(sprintf("[NOTE] No 2021 vintage; using %d\n", latest_pre))
+    myers_pre <- myers[year == latest_pre,
+                       .(myers_distance_predobbs = mean_distance_miles,
+                         county_fips = county_fips)]
+  }
+} else {
+  cat("[NOTE] Myers county distance file not present. Continuing without\n",
+      "      county-level access measure. Pre-reg §4 has this as optional.\n", sep = "")
+  myers_pre <- NULL
 }
 
-# --- Assemble panel ---------------------------------------------------
-# Expand state-monthly Guttmacher to county-monthly via state join
-# Then join Myers county-yearly distance
-# Then add post-Dobbs indicators
+# --- Build county-month panel skeleton ------------------------------
+# Use USDA CZ crosswalk to get the full county list
+cz_file <- file.path(ref, "usda_cz_2020_county_crosswalk.csv")
+if (!file.exists(cz_file)) stop("CZ crosswalk missing: ", cz_file)
+cz <- fread(cz_file)
+setnames(cz, c("GEOID", "CZ20"), c("county_fips", "cz_2020"))
+cz[, county_fips := sprintf("%05d", as.integer(county_fips))]
 
-# Build county-month skeleton from Myers counties × time range
-county_list <- unique(myers$county_fips)
 year_grid <- 2017:2024
 month_grid <- 1:12
-panel <- CJ(county_fips = county_list, year = year_grid, month = month_grid)
+panel <- CJ(county_fips = unique(cz$county_fips),
+            year = year_grid, month = month_grid)
 
-# Add state from county FIPS (first 2 digits of FIPS)
-panel[, state_fips := substr(sprintf("%05d", as.integer(county_fips)), 1, 2)]
+# State from FIPS (first 2 digits)
+panel[, state_fips := substr(county_fips, 1, 2)]
 fips_to_abbr <- c(
   "01"="AL","02"="AK","04"="AZ","05"="AR","06"="CA","08"="CO","09"="CT",
   "10"="DE","11"="DC","12"="FL","13"="GA","15"="HI","16"="ID","17"="IL",
@@ -142,24 +121,35 @@ fips_to_abbr <- c(
   "55"="WI","56"="WY"
 )
 panel[, state_abbr := fips_to_abbr[state_fips]]
+panel <- panel[!is.na(state_abbr)]   # drop territories not in lookup
 
-# Join pre-Dobbs Guttmacher composite
-panel <- merge(panel, gutt_pre, by = "state_abbr", all.x = TRUE)
+# Join CZ
+panel <- merge(panel, cz, by = "county_fips", all.x = TRUE)
 
-# Join pre-Dobbs Myers distance
-panel <- merge(panel, myers_pre, by = "county_fips", all.x = TRUE)
+# Join treatment intensities
+panel <- merge(panel, gutt[, .(state_abbr, ban_category, ban_intensity,
+                               time_to_ban_days)],
+               by = "state_abbr", all.x = TRUE)
 
-# Post-Dobbs sharp indicator
+if (!is.null(myers_pre)) {
+  myers_pre[, county_fips := sprintf("%05d", as.integer(county_fips))]
+  panel <- merge(panel, myers_pre, by = "county_fips", all.x = TRUE)
+} else {
+  panel[, myers_distance_predobbs := NA_real_]
+}
+
+# --- Post-Dobbs indicators ----------------------------------------
 panel[, date := as.Date(sprintf("%d-%02d-01", year, month))]
 panel[, post_dobbs_sharp := as.integer(date >= DOBBS_DATE)]
 
-# Post-Dobbs state-trigger indicator from KFF
-state_trigger <- kff[, .(state_abbr, state_trigger_date = as.Date(effective_date))]
-panel <- merge(panel, state_trigger, by = "state_abbr", all.x = TRUE)
-panel[is.na(state_trigger_date), state_trigger_date := DOBBS_DATE]
-panel[, post_dobbs_state_trigger := as.integer(date >= state_trigger_date)]
+# State-trigger: derived from time_to_ban_days. For each state-month, post=TRUE
+# if (DOBBS_DATE + time_to_ban_days) <= panel$date
+panel[, state_ban_date := DOBBS_DATE + time_to_ban_days]
+panel[, post_dobbs_state_trigger := as.integer(date >= state_ban_date)]
 
 saveRDS(panel, file.path(deriv, "restriction_panel.rds"))
 cat(sprintf("\nSaved restriction panel: %d rows × %d cols → %s\n",
             nrow(panel), ncol(panel),
             file.path(deriv, "restriction_panel.rds")))
+cat("Sample rows:\n")
+print(head(panel))

@@ -1,9 +1,23 @@
 # Study 03 — Dobbs/Roe-fall Shock: Differential Maternal Mortality Response by Historical Restriction Geography
 
-**Status (2026-05-24):** **PRE-REGISTRATION LOCKED.** Design fully
-specified in [PRE_REGISTRATION.md](PRE_REGISTRATION.md). All data
-sources public — no DUA wait. Data acquisition + harness scripts are
-the next gating steps. No compute fired.
+**Status (2026-05-24):** **PRE-REGISTRATION LOCKED + AMENDED.**
+Original design specified in [PRE_REGISTRATION.md](PRE_REGISTRATION.md);
+**DEVIATIONS Entry 002** pivots the treatment-intensity operationalization
+because LawAtlas/Guttmacher longitudinal policy panels turned out to be
+publicly inaccessible. Pivoted design uses post-Dobbs **ban category**
+(4-level ordinal from public Guttmacher snapshot) + **time-to-ban-days**
+(continuous from public legal-record coverage) as revealed-preference
+indicators of pre-existing infrastructure depth. **Substantial amendment
+— almost a different paper.** See DEVIATIONS.md for full rationale.
+
+Data acquisition status:
+- ✅ Guttmacher post-Dobbs ban-status snapshot (vendored as CSV from
+  public printable page)
+- ✅ USDA CZ 2020 county crosswalk (vendored)
+- ⏳ State time-to-ban-days hand-coded file (optional; rough proxy
+  derivation in harness script if absent)
+- ⏳ Myers county-distance (optional; pre-reg holds it as optional now)
+- ⏳ CDC WONDER mortality + natality (programmatic via API in harness)
 
 **Headline locks (all 7 decisions resolved):**
 - **Outcomes:** Maternal mortality (primary, county-level via WONDER) +

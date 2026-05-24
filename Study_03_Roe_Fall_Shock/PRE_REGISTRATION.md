@@ -33,8 +33,10 @@ full grid of reasonable specifications.
 | **CDC WONDER Natality** | Live-birth denominator | County-year |
 | **CDC WONDER Linked Birth–Death** | Pregnancy-associated death (broader, includes overdose/suicide/accident during pregnancy + 1yr postpartum) | State-year primarily; partial county coverage |
 | **CDC PMSS aggregate reports** | National SMM rate sanity overlay | National-year |
-| **Guttmacher Institute Policy Database** | Pre-existing restriction composite (state × month) | State-month |
-| **KFF Abortion Policy Tracker** | Post-Dobbs ban/restriction effective dates per state | State |
+| **Guttmacher public ban-status snapshot** (PRIMARY per DEVIATIONS Entry 002) | Post-Dobbs ban category per state (Total / Gestational limit ≤18wk / 19+wk / No restriction), revealed evidence of pre-existing infrastructure | State |
+| **KFF + Guttmacher trigger-date records** (hand-coded from public news/legal records) | Days from Dobbs to first state ban implementation as continuous treatment-intensity proxy | State |
+| ~~LawAtlas State Abortion Laws~~ (UNAVAILABLE per Entry 002) | ~~Pre-existing restriction composite~~ | n/a — data not publicly accessible at required depth |
+| ~~Guttmacher longitudinal Policy Database~~ (UNAVAILABLE) | ~~Triangulation~~ | n/a — interactive dashboard, no public CSV |
 | **Caitlin Myers Abortion Access Distance Dataset** | County-level distance to nearest open clinic (2009–present, peer-reviewed publication-supplementary) | County-year |
 | **USDA Economic Research Service Commuting Zones (2010)** | County → CZ partition | 709 zones |
 
@@ -60,24 +62,26 @@ can't be decomposed by restriction intensity).
 
 ## §4 Treatment intensity measures (TWO, plus correlation analysis)
 
-Per Nate 2026-05-24 decision: BOTH Guttmacher composite AND Caitlin
-Myers distance, AND model their relationship.
+Per DEVIATIONS Entry 002 (2026-05-24): the original LawAtlas-based
+longitudinal composite was unobtainable from public sources. Pivoted
+operationalization below uses public revealed-preference indicators
+of pre-existing infrastructure depth.
 
 | Measure | Construction | Variation |
 |---|---|---|
-| **Guttmacher restriction composite** | Sum of binary policy indicators (gestational limit, Medicaid funding restriction, TRAP-law presence, mandatory counseling, waiting period, parental notification) measured pre-Dobbs (2017 baseline) | State-level; ranges roughly 0–8 |
-| **Myers clinic-distance** | County-level mean distance (km) to nearest open abortion-providing clinic, pre-Dobbs (2021 vintage as the freshest pre-Dobbs measure) | County-level continuous |
+| **Ban category** (PRIMARY) | Ordinal 4-level: 0 = No restriction; 1 = Gestational limit 19+wk (incl. viability); 2 = Gestational limit ≤18wk; 3 = Total ban. Coded from Guttmacher public snapshot. | State-level; 4 levels |
+| **Time-to-ban (days from Dobbs)** | Continuous days from 2022-06-24 to state's first abortion-restriction effective date. States with no restriction coded as 99999 (max-plus). Inverse relationship: small days = high pre-existing intensity (trigger laws active). Hand-coded from KFF + public legal records. | State-level continuous |
+| **Myers clinic-distance** (OPTIONAL) | County-level mean distance to nearest open clinic, pre-Dobbs vintage. Included as third treatment-intensity measure IF the OSF file is obtainable; otherwise omitted. | County-level continuous |
 
-**Correlation pre-analysis (§11 step 3):** report Pearson and
-Spearman correlation between Guttmacher state-composite and county-mean
-Myers-distance (within state, between states). If correlation > 0.85,
-treat as substantively redundant and pre-register a sensitivity-only
-flag. If correlation < 0.85, treat as genuinely complementary —
-Guttmacher captures policy regime, Myers captures access-on-the-ground.
+**Correlation pre-analysis (§11 step 3):** report Spearman correlation
+between ban-category (ordinal) and time-to-ban (continuous), plus
+both vs Myers-distance if Myers is obtained. Strong correlation
+expected by construction (trigger-law states should have small
+time-to-ban AND high ban category). Report correlations transparently.
 
-**Primary spec uses BOTH simultaneously** in separate models; results
-reported side-by-side; differences interpreted per the correlation
-finding.
+**Primary spec uses BAN CATEGORY as the treatment intensity.**
+Time-to-ban is the continuous sensitivity. Myers distance reported
+if obtained.
 
 ## §5 Geographic units (TWO, parallel)
 
@@ -108,7 +112,7 @@ identifying for state-by-state heterogeneity.
 
 ## §7 Time window
 
-- **Pre-Dobbs baseline:** January 2017 through June 2022 (5.5 years)
+- **Pre-Dobbs baseline:** December 2018 through June 2022 (3.5 years) — narrowed from original Jan 2017 per DEVIATIONS Entry 001 to match LawAtlas coverage window. Still adequate for unit fixed-effect absorption of time-invariant heterogeneity.
 - **Post-Dobbs response:** July 2022 through latest available CDC
   WONDER data (typically through end of year 2023 as of mid-2026;
   partial 2024 if released)

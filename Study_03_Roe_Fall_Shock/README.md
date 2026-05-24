@@ -1,7 +1,31 @@
 # Study 03 — Dobbs/Roe-fall Shock: Differential Maternal Mortality Response by Historical Restriction Geography
 
-**Status (2026-05-24):** Active — framing. No pre-reg locked yet.
-Methodology shape ported from IDP project's shock-amplification design.
+**Status (2026-05-24):** **PRE-REGISTRATION LOCKED.** Design fully
+specified in [PRE_REGISTRATION.md](PRE_REGISTRATION.md). All data
+sources public — no DUA wait. Data acquisition + harness scripts are
+the next gating steps. No compute fired.
+
+**Headline locks (all 7 decisions resolved):**
+- **Outcomes:** Maternal mortality (primary, county-level via WONDER) +
+  pregnancy-associated death (secondary, state-level via linked
+  birth–death) + SMM national-aggregate (sanity overlay)
+- **Restriction measures:** BOTH Guttmacher composite AND Caitlin
+  Myers clinic-distance, modeled in parallel with correlation
+  pre-analysis
+- **Geographic units:** BOTH commuting zone (709) AND state, parallel
+  analyses
+- **Temporal cut:** sharp Dobbs (June 24, 2022) primary + state-specific
+  trigger dates as sensitivity
+- **Time window:** 5.5-year pre-Dobbs (Jan 2017 – June 2022) + rolling
+  post-Dobbs (July 2022 onward through latest WONDER data)
+- **Race:** main-effect stratifier AND race × restriction × post-Dobbs
+  three-way interaction (differential burden test)
+- **Methodology:** Bayesian DiD with continuous treatment intensity
+  (Family A primary) + hierarchical interrupted time series (Family B
+  sensitivity); synthetic control deferred
+- **~26 model fits total**, all reported regardless of direction
+- **BMI excluded** per editorial policy
+- **Editorial:** Pro-women framing, direct disparity language
 
 ## Question
 

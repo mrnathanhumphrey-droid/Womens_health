@@ -17,8 +17,9 @@ hierarchical modeling.
 
 | # | Study | Status | Substrate | Outcomes / question |
 |---|---|---|---|---|
-| 01 | [Maternal Mortality](Study_01_Maternal_Mortality/) | Active — framing | CDC WONDER + HCUP NIS (public) | Maternal mortality / severe maternal morbidity, decomposed by race × geography × insurance |
+| 01 | [SMM Decomposition](Study_01_Maternal_Mortality/) | **Pre-reg locked**, awaiting HCUP DUA + NIS purchase | HCUP NIS (DUA-gated) | Decompose Severe Maternal Morbidity across race × hospital × insurance × parity × age × comorbidities × Medicaid-expansion, 22 outcomes × 3 model families × 3 temporal contrasts |
 | 02 | [PCOS Phenotype Heterogeneity](Study_02_PCOS_Phenotypes/) | Queued | NHANES + All of Us | Latent-class phenotype structure within Rotterdam-criteria PCOS, with uncertainty propagated |
+| 03 | [Dobbs/Roe-fall Shock](Study_03_Roe_Fall_Shock/) | Active — framing | CDC WONDER + Guttmacher + KFF (all public, no DUA wait) | Differential maternal mortality response to Dobbs decision by pre-existing abortion-restriction infrastructure — IDP-port shock-amplification design |
 
 Additional studies will be added as Wilson (the research-scout role)
 identifies field gaps and Claude Code drafts pre-registrations.

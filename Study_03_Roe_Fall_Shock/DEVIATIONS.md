@@ -161,3 +161,68 @@ interactions, decision tiering, pro-women framing — all unchanged.**
 **Status after Entry 002:** Study 03 can fire. CDC WONDER + Guttmacher
 snapshot + USDA CZ are all in hand or acquirable today. Myers distance
 remains an optional enhancement.
+
+---
+
+## Entry 003 — Drop year dimension, pivot to cross-sectional disparity
+
+**Discovered:** 2026-05-24, during CDC WONDER manual export.
+
+**Context:** WONDER's grouping interface limits practical multi-level
+exports. With Section 1 = State + Year + Race + Age, exports were
+either rate-limited (API), schema-rejected, or had Year silently
+dropped on re-export. After two manual UI attempts, the working
+export covers State × Age × Race aggregated across 2018–2024 — NO
+YEAR dimension.
+
+**Implication:** the DiD/ITS shock-amplification framework requires
+year-level (or finer) temporal granularity to identify the pre/post-
+Dobbs cut. Without year, we cannot run Family A DiD or Family B ITS
+as pre-registered.
+
+**Deviation:** pivot Study 03 from shock-amplification to
+cross-sectional disparity. Headline question becomes:
+
+> Do maternal mortality rates differ across states by current
+> abortion ban category, and does the differential burden fall on
+> Black, Hispanic, and Indigenous women?
+
+This is fundamentally a different question — disparity quantification,
+not causal identification of the Dobbs shock. We're no longer using
+the IDP-shape methodology; this is a descriptive + hierarchical
+Bayesian disparity decomposition.
+
+**New methodology (replacing §5, §9 pre-reg):**
+
+Family A* — Hierarchical Bayesian NegBin disparity model:
+```
+deaths_{s,r} ~ NegBin(λ_{s,r} × pop_{s,r}, φ)
+log(λ_{s,r}) = α + β_ban[s] × race[r] + state_random[s]
+```
+Coefficients of interest: β_ban × race interactions. "Does the
+Black-vs-White rate ratio depend on state ban category?"
+
+Decision rule: posterior 95% CI on the race × ban-category interaction
+excludes zero AND practical effect (RR difference between Total-ban
+states and No-restriction states) ≥ 20%.
+
+**Pre-reg constraints touched:** §3 outcomes unchanged (mortality
+primary). §4 treatment intensity simplified to ban_category only
+(time-to-ban irrelevant without year). §5 methodology rewritten:
+single cross-sectional family, not DiD + ITS. §6 temporal cuts
+DROPPED (no temporal dimension). §7 race × ban interaction is the
+new headline. §10 decision rule rewritten for cross-sectional.
+
+**This is the THIRD substantial pivot in two days.** The originally-
+locked pre-reg (SHA `62e1e87`) is now load-bearing in name only;
+the operational study is what this deviation entry describes plus
+Entry 002. Cumulative methodological drift is large; reader of the
+final paper should evaluate the cross-sectional finding on its own
+methodological merits, not on the original pre-reg's identification
+claims.
+
+**Status after Entry 003:** Study 03 can compute cross-sectional
+disparity numbers TODAY from data already in hand. Year-stratified
+analyses deferred pending separate WONDER export with Year added
+to Section 1 grouping (user can do later if/when they want to
+revisit DiD identification).

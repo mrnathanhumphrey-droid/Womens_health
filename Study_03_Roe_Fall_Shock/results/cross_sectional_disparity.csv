@@ -1,0 +1,29 @@
+race,ban_category,deaths_total,pop_total,rate_per_100k,n_states
+American Indian or Alaska Native,Gestational limit 19+wk,0,3667888,0,18
+American Indian or Alaska Native,Gestational limit <=18wk,0,1865119,0,7
+American Indian or Alaska Native,No restriction,11,2234957,0.492179491596483,8
+American Indian or Alaska Native,Total ban,0,3844850,0,11
+Asian,Gestational limit 19+wk,34,28064223,0.121150690685432,18
+Asian,Gestational limit <=18wk,0,7997262,0,7
+Asian,No restriction,0,9793028,0,8
+Asian,Total ban,37,10197315,0.362840610494037,11
+Black or African American,Gestational limit 19+wk,757,51031394,1.48340059062467,18
+Black or African American,Gestational limit <=18wk,814,44088627,1.84628112823745,7
+Black or African American,No restriction,321,21669189,1.48136600774491,8
+Black or African American,Total ban,678,36469559,1.85908472323452,11
+More than one race,Gestational limit 19+wk,0,12080285,0,18
+More than one race,Gestational limit <=18wk,0,4805444,0,7
+More than one race,No restriction,0,4020890,0,8
+More than one race,Total ban,0,5485264,0,11
+Native Hawaiian or Other Pacific Islander,Gestational limit 19+wk,0,1344982,0,18
+Native Hawaiian or Other Pacific Islander,Gestational limit <=18wk,0,441766,0,7
+Native Hawaiian or Other Pacific Islander,No restriction,0,215658,0,8
+Native Hawaiian or Other Pacific Islander,Total ban,0,358648,0,11
+Not Available,Gestational limit 19+wk,0,0,,18
+Not Available,Gestational limit <=18wk,0,0,,7
+Not Available,No restriction,0,0,,8
+Not Available,Total ban,0,0,,11
+White,Gestational limit 19+wk,1730,287787994,0.601136960564102,18
+White,Gestational limit <=18wk,978,146298178,0.668497730709948,7
+White,No restriction,576,101272771,0.56876097524773,8
+White,Total ban,1582,184525293,0.857335042952621,11
